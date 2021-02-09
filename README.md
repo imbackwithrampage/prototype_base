@@ -71,7 +71,7 @@ First thing is to change the versions of `postcss` to the 8.x.x and `postcss-loa
 
 Then we need to go into the webpack config file at `config/webpack.config.js`, look for the `postcss-loader` section and modify it like so:
 
-```json
+```js
 {
   // Options for PostCSS as we reference these options twice
   // Adds vendor prefixing based on your specified browser support in
