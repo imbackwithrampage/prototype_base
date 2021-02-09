@@ -1,70 +1,104 @@
-# Getting Started with Create React App
+# React protoype base for CodeSandbox using Tailwind
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+```bash
+// Create the app
+yarn create react-app prototype_base
+cd prototype_base
 
-## Available Scripts
+// Install PostCSS-CLI, Tailwind & Autoprefixer
+yarn add postcss-cli tailwindcss autoprefixer --dev
 
-In the project directory, you can run:
+// Use tailwind CLI to generate the tailwind file
+npx tailwindcss init
+```
 
-### `yarn start`
+***WARNING!*** `postcss-cli` 8.*.* is currently not working in the lateast versionf of `CRA`, and `tailwind` 2.0.2 requires it. You can follow [https://tailwindcss.com/docs/installation#post-css-7-compatibility-build](https://tailwindcss.com/docs/installation#post-css-7-compatibility-build) instead if you don't plan to use this with `CodeSandbox`, but using the `tailwindcss@npm:@tailwindcss/postcss7-compat` dependency will fail in csbx.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+> `[PostCSS](https://github.com/postcss/postcss)` is a tool for transforming styles with JS plugins. These plugins can lint your CSS, support variables and mixins, transpile future CSS syntax, inline images, and more.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+`[Tailwind](https://tailwindcss.com/)` is a utility CSS framework to speed up creation of websites by bootstraping an API that can be used standalone or as a PostCSS plugin.
 
-### `yarn test`
+`[Autoprefixer](https://github.com/postcss/autoprefixer)` is a PostCSS plugin, it basically parses your CSS and adds/removes unnecessary vendor prefixes in your compiled CSS rules. It can help you add prefixes for animations, transition, transform, grid, flex, flexbox, etc.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Create `postcss.config.js` in the root of the project and fill with:
 
-### `yarn build`
+```jsx
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  }
+}
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Inside the `src` folder create a folder, name it `styles` , this is where all your styles would be stored. Inside that folder, create a `tailwind.css` and an `index.css` file.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Add the following to your `index.css` file:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
 
-### `yarn eject`
+Now go into `index.js` and delete any refferences of styles that are currently there, also the css files that are outside our newly created `styles` folder, and change them for:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+```jsx
+import './styles/tailwind.css';
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Modify the `package.json` scripts with:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```json
+"build:style":"tailwind build src/styles/index.css -o src/styles/tailwind.css",
+"start": "npm run build:style && react-scripts start",
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Now here's the tricky part, as stated in the warning above, we will need to edit the default configuration of `CRA`. First, to be able to access it we need to `eject`.
 
-## Learn More
+```bash
+yarn run eject
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+This will expose all the configuration that CRA does behind the scenes, don't get scared.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+First thing is to change the versions of `postcss` to the 8.x.x and `postcss-loader` to a compatible one `package.json` that work together like:
 
-### Code Splitting
+```json
+"postcss": "^8.1.14",
+"postcss-loader": "^4.1.0",
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Then we need to go into the webpack config file at `config/webpack.config.js`, look for the `postcss-loader` section and modify it like so:
 
-### Analyzing the Bundle Size
+```json
+{
+  // Options for PostCSS as we reference these options twice
+  // Adds vendor prefixing based on your specified browser support in
+  // package.json
+  loader: require.resolve('postcss-loader'),
+  options: {
+    // Necessary for external CSS imports to work
+    // https://github.com/facebook/create-react-app/issues/2677
+    postcssOptions: {
+      ident: 'postcss',
+      plugins: () => [
+        require('postcss-flexbugs-fixes'),
+        require('postcss-preset-env')({
+          autoprefixer: {
+            flexbox: 'no-2009',
+          },
+          stage: 3,
+        }),
+        // Adds PostCSS Normalize as the reset css with default options,
+        // so that it honors browserslist config in package.json
+        // which in turn let's users customize the target behavior as per their needs.
+        postcssNormalize(),
+      ]
+    },
+    sourceMap: isEnvProduction ? shouldUseSourceMap : isEnvDevelopment,
+  },
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `yarn build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+We had to wrap the `plugins` section inside a `postcssOptions` object for it to work. The `ident` param is needed for [webpack](https://v4.webpack.js.org/loaders/postcss-loader/#plugins). This is the main reason why you need to use the compatibility build. The CRA project still has not agreed on how to proceed with the latest version of PostCSS and is currently WiP.
